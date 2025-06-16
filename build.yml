@@ -1,0 +1,61 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+- task: Docker@2
+  displayName: Build Docker Image
+  inputs:
+    command: build
+    repository: $(imageRepository)
+    dockerfile: $(dockerfilePath)
+    containerRegistry: $(dockerRegistryServiceConnectionDev)
+    tags: |
+      latest
+      $(sourceTag)
+
+# Step : Install and authenticate Snyk
+- script: |
+    npm install -g snyk
+    snyk config set endpoint=$(SNYK_ENDPOINT)
+    snyk auth $(SNYK_TOKEN)
+    set +e
+  displayName: 'Snyk Install & Auth'
+
+# Step : Scan docker image     
+- task: Docker@2
+  displayName: Build Docker Image
+  inputs:
+    command: build
+    repository: $(SNYK_DOCKER_REPOS)   #'suite-crm'
+    dockerfile: '$(dockerfilePath)'
+    tags: 'latest'
+
+- script: docker images
+  displayName: List Docker Images
+
+- task: SnykSecurityScan@1
+  inputs:
+    serviceConnectionEndpoint: 'snyk-integration-eu'
+    testType: 'container'
+    dockerImageName: '$(SNYK_DOCKER_REPOS):latest'
+    dockerfilePath: '$(dockerfilePath)'
+    monitorWhen: 'always'
+    severityThreshold: 'high'
+    failOnIssues: false
+
+      
+
+# Push Image to Container Registry.
+- task: Docker@2
+  displayName: Push Image to Dev Container Registry
+  inputs:
+    command: push
+    repository: $(imageRepository)
+    containerRegistry: $(dockerRegistryServiceConnectionDev)
+    tags: |
+      latest
+      $(sourceTag)
