@@ -9,13 +9,13 @@ steps:
 # Pull the SuiteCRM image from Docker Hub.
 - script: |
     echo "Pulling the Bitnami SuiteCRM image..."
-    docker pull $(bitnamiImage):$(sourceTag)
+    docker pull $(bitnamiImage_Drupal):$(sourceTag)
   displayName: 'Pull Bitnami SuiteCRM Image'
   
 # Tag the pulled image with our ACR repository name.
 - script: |
     echo "Tagging image..."
-    docker tag $(bitnamiImage):$(sourceTag) $(registryPrefix)/$(imageRepositoryBitnami):$(sourceTag)
+    docker tag $(bitnamiImage_Drupal):$(sourceTag) $(registryPrefix)/$(imageRepositoryBitnami_Drupal):$(sourceTag)
   displayName: 'Tag Image'
 
 # List docker images.
@@ -27,7 +27,7 @@ steps:
   displayName: Push Image to Dev Container Registry
   inputs:
     command: push
-    repository: $(imageRepositoryBitnami)
+    repository: $(imageRepositoryBitnami_Drupal)
     containerRegistry: $(dockerRegistryServiceConnectionDev)
     tags: |
       latest
